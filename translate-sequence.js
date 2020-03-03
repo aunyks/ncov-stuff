@@ -1,26 +1,16 @@
 const { join } = require('path')
 const { readFileSync } = require('fs')
-const lookup = require('./codon-table')
+const lookup = require('./translate-codons')
+
+// which part of the genome are we reading?
+const START_INDEX = 29558
+const END_INDEX = 29674
 
 const sequence = readFileSync(join('.', 'nih-seq.txt'), { encoding: 'utf8' })
-  // convert DNA to mRNA
-  // a -> u
-  // c -> g
-  // t -> a
-  // g -> c
-  .split('t').join('x')
-  .split('a').join('w')
-  .split('c').join('y')
-  .split('g').join('z')
-  .split('x').join('a')
-  .split('w').join('u')
-  .split('y').join('g')
-  .split('z').join('c')
+  // cDNA to mRNA
+  .split('t').join('u')
 
-console.log(sequence.substring(0, 10))
-console.log(
-  `The sequence is ${sequence.length} characters in length`
-)
+//console.log(`The sequence is ${sequence.length} characters in length`)
 
 // The indices are based on values found in the NIH
 // report (https://www.ncbi.nlm.nih.gov/nuccore/MN908947.3)
@@ -32,7 +22,7 @@ const getGeneSequence = (startIndex, endIndex) => {
 // group the sequence into threes
 const sequenceAcids = seq => {
   const acids = []
-  for (let i = 0; i < seq.length - 3; i++) {
+  for (let i = 0; i <= seq.length - 3; i += 3) {
     const codon = seq.substring(i, i + 3)
     acids.push(codon)
   }
@@ -43,7 +33,9 @@ const sequenceAcids = seq => {
 // in our codon table and print the amino
 // acids in the order we find them
 console.log(
-  sequenceAcids(getGeneSequence(266, 21555))
-    .map(codon => lookup(codon))
-    .join(', ')
+  sequenceAcids(getGeneSequence(START_INDEX, END_INDEX))
+    .map(codon => lookup(codon, 'initial'))
+    .join('')
+    // Remove STOPs, for demonstration
+    .split('STOP').join('')
 )

@@ -8,6 +8,31 @@ const isRNANucleotide = n => {
   )
 }
 
+const shortcodeToInitial = {
+  START: 'M',
+  STOP: 'STOP',
+  Phe: 'F',
+  Leu: 'L',
+  Ile: 'I',
+  Met: 'M',
+  Val: 'V',
+  Ser: 'S',
+  Pro: 'P',
+  Thr: 'T',
+  Ala: 'A',
+  His: 'H',
+  Gln: 'Q',
+  Asn: 'N',
+  Lys: 'K',
+  Asp: 'D',
+  Glu: 'E',
+  Cys: 'C',
+  Trp: 'W',
+  Arg: 'R',
+  Gly: 'G',
+  Tyr: 'Y'
+}
+
 const shortcodeToAminoAcid = {
   START: 'START',
   STOP: 'STOP',
@@ -30,6 +55,7 @@ const shortcodeToAminoAcid = {
   Trp: 'Tryptophan',
   Arg: 'Arginine',
   Gly: 'Glycine',
+  Tyr: 'Tyrosine'
 }
 
 // A trie representing the
@@ -146,29 +172,36 @@ const codonTrie = {
   }
 }
 
-module.exports = codon => {
-  // If we don't have three nucleotides,
-  // we don't have a codon
-  if (codon.length !== 3) {
-    throw new Error('Codons must be three nucleotides in length')
+module.exports =
+  (codon, format = 'fullName' /* | 'initial' | 'shorthand'*/) => {
+    // If we don't have three nucleotides,
+    // we don't have a codon
+    if (codon.length !== 3) {
+      throw new Error('Codons must be three nucleotides in length')
+    }
+    // If a letter in the codon string
+    // doesn't represent
+    // a valid RNA nucleotide WE DONT WANT IT
+    const nucleotides = codon.split('')
+    if (!nucleotides.every(n => isRNANucleotide(n))) {
+      throw new Error(`We found an invalid nucleotide in the codon ${codon}`)
+    }
+    // Make the nucleotides lower case before
+    // we look them up in the codon table
+    const lowerCaseNucleotides = nucleotides.map(n => n.toLowerCase())
+    // Split the codon string into each
+    // individual letters representing
+    // its nucleotide
+    const [n1, n2, n3] = lowerCaseNucleotides
+    // search the codon table and return
+    // the amino acid that's encoded by 
+    // this codon
+    const shortcode = codonTrie[n1][n2][n3]
+    if (format === 'fullName') {
+      return shortcodeToAminoAcid[shortcode]
+    } else if (format === 'shortcode') {
+      return shortcode
+    } else {
+      return shortcodeToInitial[shortcode]
+    }
   }
-  // If a letter in the codon string
-  // doesn't represent
-  // a valid RNA nucleotide WE DONT WANT IT
-  const nucleotides = codon.split('')
-  if (!nucleotides.every(n => isRNANucleotide(n))) {
-    throw new Error(`We found an invalid nucleotide in the codon ${codon}`)
-  }
-  // Make the nucleotides lower case before
-  // we look them up in the codon table
-  const lowerCaseNucleotides = nucleotides.map(n => n.toLowerCase())
-  // Split the codon string into each
-  // individual letters representing
-  // its nucleotide
-  const [n1, n2, n3] = lowerCaseNucleotides
-  // search the codon table and return
-  // the amino acid that's encoded by 
-  // this codon
-  const shortcode = codonTrie[n1][n2][n3]
-  return shortcodeToAminoAcid[shortcode]
-}
